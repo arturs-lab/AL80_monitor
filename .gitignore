@@ -1,0 +1,10 @@
+*.bin
+*.hex
+*.lst
+eeprom_write.*
+BASIC-4k*
+attic
+basic_rc2014
+checksums_a000.asm
+checksums_c000.asm
+notes.txt
