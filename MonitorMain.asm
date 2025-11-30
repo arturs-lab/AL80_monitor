@@ -7,7 +7,12 @@
 ;  CREATE DATE :	05 May 15 / 2022-03-28
 ;***************************************************************************
 
+if ROM_BOTTOM_0000
             ORG ROM_BOTTOM
+		DISP $4000
+else
+            ORG ROM_BOTTOM
+endif
 
 ROUTINES:
 R_MAIN:     JP      MAIN            ; init DART and starts command loop
