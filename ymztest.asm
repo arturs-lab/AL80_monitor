@@ -10,22 +10,29 @@
 ;
 ; SAVE "name" CODE 60000 5024
 
-CLKDIV	EQU 0
-;CHIP		EQU "AY"
-CHIP		EQU "YMZ"
+CPUCLKD	EQU 0
+;CHIP		EQU "AY"		; IO card AY-3-8910
+;CHIP		EQU "YMZio"	; IO card YMZ
+CHIP		EQU "YMZ"		; onboard YMZ
 
 if CHIP = "AY"
 AYSEL		EQU	$00
 AYDTA		EQU	$01
 PLAYER	EQU	$2400
 FRQDIV	EQU	$20
-else
-AYSEL		EQU	$b0
-AYDTA		EQU	$b1
-;AYSEL		EQU	$02
-;AYDTA		EQU	$03
-PLAYER	EQU	$3800
+IOPORT	EQU	$05
+elif CHIP = "YMZio"
+AYSEL		EQU	$02
+AYDTA		EQU	$03
+PLAYER	EQU	$2400
 FRQDIV	EQU	$10
+IOPORT	EQU	$05
+elif CHIP = "YMZ"
+AYSEL		EQU	$f6
+AYDTA		EQU	$f7
+PLAYER	EQU	$2400
+FRQDIV	EQU	$a0
+IOPORT	EQU	$f0
 endif
 
 MUSIC1	EQU	PLAYER + $0500
@@ -43,19 +50,29 @@ XTRAEND	EQU	XTRA + 385
 
 	ORG	PLAYER
 
-FA00	ld a,$10	; frequency source
+FA00	EQU $
+if CHIP = "YMZ"		; onboard YMZ
+	in a,(IOPORT)
+	and a,$0f
+	or a,FRQDIV	; freq divider
+	out (IOPORT),a
+else				; sound chip on IIO board
+	ld a,$10	; frequency source
 	out (04),a
 	ld a,FRQDIV	; freq divider
-	out (05),a
-	in a,($d0)		; get current clock divider
+	out (IOPORT),a
+endif
+/*
+	in a,($f0)		; get current clock divider
 	push af
-if CLKDIV = 0
+if CPUCLKD = 0
 	ld a,$0	; cpu frequency
 else
 	ld a,$1	; cpu frequency
 endif
-	out ($d0),a
-if CLKDIV = 0
+	out ($f0),a
+*/
+if CPUCLKD = 0
 	ld a,$c0		; playback speed
 else
 	ld a,$e0		; playback speed
@@ -767,11 +784,15 @@ XTRAEND	DB	$3f
 endprog	equ $
 
 if CHIP = "AY"
-	output_bin "aytest.bin",PLAYER,endprog-PLAYER		; The binary file
+;	output_bin "aytest.bin",PLAYER,endprog-PLAYER		; The binary file
 	output_intel "aytest.hex",PLAYER,endprog-PLAYER		; The binary file
 	output_list "aytest.lst"
+elif CHIP = "YMZio"
+;	output_bin "ymziotest.bin",PLAYER,endprog-PLAYER		; The binary file
+	output_intel "ymziotest.hex",PLAYER,endprog-PLAYER		; The binary file
+	output_list "ymziotest.lst"
 else
-	output_bin "ymztest.bin",PLAYER,endprog-PLAYER		; The binary file
+;	output_bin "ymztest.bin",PLAYER,endprog-PLAYER		; The binary file
 	output_intel "ymztest.hex",PLAYER,endprog-PLAYER		; The binary file
 	output_list "ymztest.lst"
 endif
