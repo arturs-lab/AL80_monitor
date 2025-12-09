@@ -83,7 +83,7 @@ zoWarnFlow = true
 	jp (hl)			; and jump to beginning of it
 
 	org $c1a0
-code_label:	db "Monitor Loader A000",0		; label of this program for monitor loader to display
+code_label:	db "AL80 Monitor Loader A000",0		; label of this program for monitor loader to display
 
 	org $c1bc
 boot_dest	dw $a000		; destination address of boot code
