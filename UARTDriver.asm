@@ -68,10 +68,7 @@ UART_END_PRNT_STR:
 ;Function: Check if UART is ready to transmit
 ;***************************************************************************
 UART_TX_RDY:	PUSH 	AF
-UARTTXRDY_LP:			
-;	ld a,$4e				; reset wdt
-;	out ($F1),a
-			IN		A,(UART5)			;Fetch the control register
+UARTTXRDY_LP:	IN		A,(UART5)			;Fetch the control register
 			BIT 	5,A					;Bit will be set if UART is ready to send
 			JR		Z,UARTTXRDY_LP		
 			POP     AF
@@ -90,10 +87,7 @@ UART_TX:		CALL  UART_TX_RDY			;Make sure UART is ready to receive
 ;Function: Wait for UART to receive a byte
 ;***************************************************************************
 UART_RX_RDY:	PUSH 	AF					
-UART_RXRDY_LP:			
-;	ld a,$4e				; reset wdt
-;	out ($F1),a
-			IN		A,(UART5)			;Fetch the control register
+UART_RXRDY_LP:	IN		A,(UART5)			;Fetch the control register
 			BIT 	0,A					;Bit will be set if UART is ready to receive
 			JR		Z,UART_RXRDY_LP		
 			POP     AF
