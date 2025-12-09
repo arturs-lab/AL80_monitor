@@ -7,7 +7,7 @@
 ;  CREATE DATE :	05 May 15 / 2022-03-28
 ;***************************************************************************
 
-if ROM_BOTTOM_0000
+if def ROM_BOTTOM_0000
             ORG ROM_BOTTOM
 		DISP $4000
 else
