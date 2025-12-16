@@ -86,7 +86,7 @@ del1:	dec a
 	ret
 
 chime:	ld bc,$0200	; bc = duration
-	ld a,$0c		; a = pitch
+	ld a,$10		; a = pitch
 	; fall through to beep
 
 ; bc = duration, a = pitch
@@ -104,15 +104,15 @@ bep1:	out (beepr),a
 
 memmap_init:	in a,(beepr)	; unlock memmap
 	ld a,0		; init mem map
-	out ($d8),a
+	out (memmap),a
 	ld a,1
-	out ($d9),a
-	out ($da),a
-	out ($db),a
-	out ($dc),a
-	out ($dd),a
-	out ($de),a
-	out ($df),a
+	out (memmap+1),a
+	out (memmap+2),a
+	out (memmap+3),a
+	out (memmap+4),a
+	out (memmap+5),a
+	out (memmap+6),a
+	out (memmap+7),a
 	out (beepr),a	; lock memmap
 	ret
 
@@ -156,17 +156,24 @@ TAB_INIT:		ldir
 MAIN:
 	di
 
+if MACHINE = "MintZ80"
 	ld a,$7b	; disable wdt
 	out ($f0),a
 	ld a,$b1
 	out ($f1),a
+endif
 
 	ld sp,SP_INIT
 
+if MACHINE = "MintZ80"
 	ld a,$01
 	out ($f4),a	; set INTPR register, SIO-CTC-PIO priority. section 3.9, page 149
+endif
 
-;	call memmap_init
+if MACHINE = "AL80"
+	call memmap_init	; AL80 does not initialize memap on reset reliably
+; maybe even move memap_init code here to avoid using stack since that mem page can be wrong too.
+endif
 
 	ld a,$20
 	call delay			; looks like Z80 needs this delay to successfully write to IO ports
@@ -188,6 +195,8 @@ endif
 ; this needs to happen after all hardware was initialized and had a chance to install their ISRs
 if EN_INT
 	ei
+else
+	nop				; leave room for EI for testing
 endif
 	call CON_PRT_STR_SP	; print banner
 zoWarnFlow = false
