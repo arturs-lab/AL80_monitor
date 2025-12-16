@@ -31,7 +31,8 @@ zoWarnFlow = true
 
 chksum_calc:	ld hl,CFSECT_BUF_V+$200	; calculate and print checksum
 	ld (MVADDR+0),hl
-	ld bc,$3dcf
+;	ld bc,$3dcf
+	ld bc,$2000	; only calculate and load first $2000 bytes from CF - 8K basic
 	add hl,bc
 	ld (MVADDR+2),hl
 	call jCCKSM_DO
@@ -152,7 +153,7 @@ zoWarnFlow = true
 	ret
 
 	org $c1a0
-code_label:	db "AL80 Universal Bootloader",0		; label of this program for monitor loader to display
+code_label:	db "AL80 Universal Bootldr",0		; label of this program for monitor loader to display
 
 	org $c1b8
 dta_size	dw $3e00		; default $3e00
