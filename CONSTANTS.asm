@@ -2,8 +2,8 @@ VERSMYR:    EQU     "1"
 VERSMIN:    EQU     "3"
 
 ; clock divider
-CLKDIV	EQU $a4		; (SYSCLK MHz/2/(value+1))
-SYSCLK	EQU "4.00"
+CLKDIV	EQU $a2		; upper nibble:PSGCLK, lower nibble:(SYSCLK MHz/2/(value+1)), 6.666MHz
+SYSCLK	EQU "6.66"
 MACHINE	EQU "AL80"
 
 ; Constants, extracted to make the versioned file hardware agnostic
@@ -99,9 +99,9 @@ CF_LBA3:	EQU MONVARS + $ab
 CF_PART_CUR:	EQU MONVARS + $ac	; Current partition offset into MBR
 CFSECT_BUF:	EQU MONVARS + $ae	; pointer to location of CF data buffer. Need $200 byte buffer
 
-SYSTMR0:	EQU MONVARS + $b0		; system timers. SYSTMR0 overflowing into SYSTMR2 gets incremented on T0 interrupt every 1ms
+SYSTMR0:	EQU MONVARS + $b0		; system timers. SYSTMR0 overflowing into SYSTMR2 gets incremented on T2 interrupt every 1ms
 SYSTMR2:	EQU MONVARS + $b2
-SYSTMR4:	EQU MONVARS + $b4		; SYSTMR4 overflowing into SYSTMR6 gets incremented on T1 interrupt, 5ms
+SYSTMR4:	EQU MONVARS + $b4		; SYSTMR4 overflowing into SYSTMR6 gets incremented on T3 interrupt, 5ms
 SYSTMR5:	EQU MONVARS + $b5		; seconds
 SYSTMR6:	EQU MONVARS + $b6		; minutes
 SYSTMR7:	EQU MONVARS + $b7		; hours
@@ -149,8 +149,8 @@ CTC_CH2:	EQU CTC_BASE+2		; this feeds SIOB
 CTC_CH3:	EQU CTC_BASE+3		; this feeds SIOA
 SIO_BASE:	EQU 44h			; SIO port
 SIO_DA:	EQU SIO_BASE
-SIO_CA:	EQU SIO_BASE+1
-SIO_DB:	EQU SIO_BASE+2
+SIO_CA:	EQU SIO_BASE+2
+SIO_DB:	EQU SIO_BASE+1
 SIO_CB:	EQU SIO_BASE+3
 PIO_BASE:	EQU 48h         ; Base port address for Z80 PIO, not used. 68h
 PIO_DA:	EQU PIO_BASE+0
@@ -193,7 +193,11 @@ memmap:	EQU $f8	; memory map $d8-$df
 SIOA_WR0_CV:		EQU 00110000b	; write into WR0: error reset
 SIOA_WR1_CV:		EQU 00000000b	; no interrupts
 SIOA_WR3_CV:		EQU 00001100b	; write into WR3: RX disable;
+if MACHINE = "AL80"
+SIOA_WR4_CV:		EQU 00000100b	; write into WR4: presc. 1x, 1 stop bit, no parity
+else
 SIOA_WR4_CV:		EQU 01000100b	; write into WR4: presc. 16x, 1 stop bit, no parity
+endif
 SIOA_WR5_CV:		EQU 11101000b	; write into WR5: DTR on, TX 8 bits, BREAK off, TX on, RTS off
 SIOA_WR6_CV:		EQU 0
 SIOA_WR7_CV:		EQU 0
@@ -212,18 +216,34 @@ SIOB_WR7_CV:		EQU 0
 ; PIO config values
 PIO_CH0_CNFV:	EQU 11001111b
 PIO_CH1_CNFV:	EQU 11001111b
+
 ; CTC config values
+if MACHINE = "AL80"
+CTC_CH0_CNFV:	EQU 01010111b	; no int, counter, /16 prescaler
+CTC_CH1_CNFV:	EQU 01010111b	; no int, counter, /16 prescaler
+CTC_CH2_CNFV:	EQU 10100111b	; int, timer, /256 prescaler
+CTC_CH3_CNFV:	EQU 10100111b	; int, timer, /256 prescaler
+else
 CTC_CH0_CNFV:	EQU 10100111b
 CTC_CH1_CNFV:	EQU 10100111b
 CTC_CH2_CNFV:	EQU 01110111b
 CTC_CH3_CNFV:	EQU 01110111b
+endif
+
 ; CTC time constants values
+if MACHINE = "AL80"
+CTC_CH0_TV:	EQU $60	; SIOA 19200 baud with 16x prescaler in CTC and 16x prescaler in SIO ; @1.8432MHz CLK: 0x01=115200baud, 0x02=57600b, 0x03=38400b, 0x06=19200b, 0x08=14400b, 0x0c=9600b, 0x18=4800b
+CTC_CH1_TV:	EQU $60	; SIOB 19200 baud with 16x prescaler in CTC and 1x prescaler in SIO ; @1.8432MHz CLK: 0x08=230400baud, 0x10=115200b, 0x20=57600b, 0x30=38400b, 0x60=19200b, 0x80=14400b, 0xc0=9600b
+CTC_CH2_TV:	EQU $24	; $24 -> 1000Hz, 1ms, $12 -> 2000Hz, 500us
+CTC_CH3_TV:	EQU $b4	; 180=$b4 system interrupt, $b4 -> 200Hz, 5ms
+else
 CTC_CH0_TV:	EQU $24	; $24 -> 1000Hz, 1ms, $12 -> 2000Hz, 500us
 CTC_CH1_TV:	EQU $b4	; 180=$b4 system interrupt, $b4 -> 200Hz, 5ms
 CTC_CH2_TV:	EQU $0f	; SIOB 9600 baud with 16x prescaler in SIO ; @4MHz CPU: 11=57600baud, 1a=38400baud, 34=19200baud, 45=14400baud, 68=9600baud, d0=4800baud
 CTC_CH3_TV:	EQU $0f	; SIOA 9600 baud with 16x prescaler in SIO ; @4.608MHz CPU: 14=115200, 28=57600, 3c=38400, 78=19200, a0=14400, f0=9600baud
 					; with 256x prescaler in SIO ; @4.608MHz CPU: 01=14400, 0f=9600, 1e=4800, 3c=2400
 					; with 256x prescaler in SIO ; @9.216MHz CPU: 0f=19200, 14=14400, 1e=9600, 3c=4800, 78=2400
+endif
 
 ; Error codes intel Hex record
 E_NONE:	EQU 00h
