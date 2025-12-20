@@ -44,7 +44,6 @@ CTC2_INIT: ld a,CTCV+4	; load CTC interrupt vector
 	ret
 
 ;init CH3
-;CH3 disabled
 CTC3_INIT: ld a,CTCV+6	; load CTC interrupt vector
 	out (CTC_CH3),a		; set CTC T0 to that vector
 	ld a,(CTC_CH3_CNF)	; interrupt off, timer mode, prescaler=16, don't care ext. TRG edge,
@@ -94,7 +93,7 @@ CTC_T1_ISR:	push af
 
 ; T2 ISR - increment system timer by 1 on every interrupt
 ; 118 cycles when only lower counter incremented
-; 151 cycles when overflow into upper counter = 16.3845486us
+; 151 cycles when overflow into upper counter = 22.65us @6.66MHz
 
 CTC_T2_ISR:	push hl	; 11c
 		push af		; 11c
