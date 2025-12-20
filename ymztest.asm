@@ -16,23 +16,23 @@ CPUCLKD	EQU 0
 CHIP		EQU "YMZ"		; onboard YMZ
 
 if CHIP = "AY"
-AYSEL		EQU	$00
-AYDTA		EQU	$01
+AYSEL		EQU	IOAY
+AYDTA		EQU	IOAY+1
 PLAYER	EQU	$2400
 FRQDIV	EQU	$20
-IOPORT	EQU	$05
+IOPORT	EQU	IOFRQDIV
 elif CHIP = "YMZio"
-AYSEL		EQU	$02
-AYDTA		EQU	$03
+AYSEL		EQU	IOYMZ
+AYDTA		EQU	IOYMZ+1
 PLAYER	EQU	$2400
 FRQDIV	EQU	$10
-IOPORT	EQU	$05
+IOPORT	EQU	IOFRQDIV
 elif CHIP = "YMZ"
-AYSEL		EQU	$f6
-AYDTA		EQU	$f7
+AYSEL		EQU	ymcs
+AYDTA		EQU	ymcs+1
 PLAYER	EQU	$2400
 FRQDIV	EQU	$a0
-IOPORT	EQU	$f0
+IOPORT	EQU	turbo
 endif
 
 MUSIC1	EQU	PLAYER + $0500
@@ -63,14 +63,14 @@ else				; sound chip on IIO board
 	out (IOPORT),a
 endif
 /*
-	in a,($f0)		; get current clock divider
+	in a,(turbo)		; get current clock divider
 	push af
 if CPUCLKD = 0
 	ld a,$0	; cpu frequency
 else
 	ld a,$1	; cpu frequency
 endif
-	out ($f0),a
+	out (turbo),a
 */
 if CPUCLKD = 0
 	ld a,$c0		; playback speed
@@ -274,8 +274,10 @@ FBC7	ld	d,$07	; Write FF to register 7 - disable all channels. Should be 3F to n
 	ld	e,$FF
 	call	AYWRITE
 ;	ei
+/*
 	pop af			; restore original clock
-	out ($d0),a
+	out (turbo),a
+*/
 	xor a				; return with A=0
 	ret		; exit
 
