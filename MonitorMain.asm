@@ -51,6 +51,9 @@ code_end:	dw endcode				; store address of last byte of this code in a defined p
 		include "SIODriver.asm"
 		include "PIODriver.asm"
 		include "YMZDrvr.asm";
+	if def i8255A
+		include "i8255Driver.asm"
+	endif
 
 		INCLUDE "CFDriver.asm"
 	if def USE_UART
@@ -192,6 +195,10 @@ endif
 if def UART_INIT
 	CALL UART_INIT		; Initialize UART
 endif
+if def i8255A
+	call i8255RST
+endif
+
 ; this needs to happen after all hardware was initialized and had a chance to install their ISRs
 if EN_INT
 	ei
