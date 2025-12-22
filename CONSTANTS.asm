@@ -13,7 +13,7 @@ MACHINE	EQU "AL80"
 USE_UART:	EQU true
 
 ; do wew want to enable interrupts?
-EN_INT:	EQU false
+EN_INT:	EQU true
 
 ; ### MEM map
 RAM_BOTTOM:	EQU 02000H       ; Bottom address of RAM
@@ -202,7 +202,11 @@ SIOA_WR5_CV:		EQU 11101000b	; write into WR5: DTR on, TX 8 bits, BREAK off, TX o
 SIOA_WR6_CV:		EQU 0
 SIOA_WR7_CV:		EQU 0
 SIOB_WR0_CV:		EQU 0
+if EN_INT
 SIOB_WR1_CV:		EQU 00011100b	; RX int enable, parity does not affect vector, status affects vector
+else
+SIOB_WR1_CV:		EQU 00000100b	; RX int enable, parity does not affect vector, status affects vector
+endif
 SIOB_WR2_CV:		EQU SIOV		; write into WR2: set interrupt vector, but bits D3/D2/D1 of this vector
 							; will be affected by the channel & condition that raised the interrupt
 							; (see datasheet): in our example, 0x0C for Ch.A receiving a char, 0x0E
@@ -221,8 +225,13 @@ PIO_CH1_CNFV:	EQU 11001111b
 if MACHINE = "AL80"
 CTC_CH0_CNFV:	EQU 01010111b	; no int, counter, /16 prescaler
 CTC_CH1_CNFV:	EQU 01010111b	; no int, counter, /16 prescaler
+if EN_INT
 CTC_CH2_CNFV:	EQU 10100111b	; int, timer, /256 prescaler
 CTC_CH3_CNFV:	EQU 10100111b	; int, timer, /256 prescaler
+else
+CTC_CH2_CNFV:	EQU 00100111b	; int, timer, /256 prescaler
+CTC_CH3_CNFV:	EQU 00100111b	; int, timer, /256 prescaler
+endif
 else
 CTC_CH0_CNFV:	EQU 10100111b
 CTC_CH1_CNFV:	EQU 10100111b
@@ -234,8 +243,8 @@ endif
 if MACHINE = "AL80"
 CTC_CH0_TV:	EQU $60	; SIOA 19200 baud with 16x prescaler in CTC and 16x prescaler in SIO ; @1.8432MHz CLK: 0x01=115200baud, 0x02=57600b, 0x03=38400b, 0x06=19200b, 0x08=14400b, 0x0c=9600b, 0x18=4800b
 CTC_CH1_TV:	EQU $60	; SIOB 19200 baud with 16x prescaler in CTC and 1x prescaler in SIO ; @1.8432MHz CLK: 0x08=230400baud, 0x10=115200b, 0x20=57600b, 0x30=38400b, 0x60=19200b, 0x80=14400b, 0xc0=9600b
-CTC_CH2_TV:	EQU $24	; $24 -> 1000Hz, 1ms, $12 -> 2000Hz, 500us
-CTC_CH3_TV:	EQU $b4	; 180=$b4 system interrupt, $b4 -> 200Hz, 5ms
+CTC_CH2_TV:	EQU $0d	; @6.66MHz $0d -> 2000Hz, 500us
+CTC_CH3_TV:	EQU $82	; @6.66MHz $82 -> 200Hz, 5ms
 else
 CTC_CH0_TV:	EQU $24	; $24 -> 1000Hz, 1ms, $12 -> 2000Hz, 500us
 CTC_CH1_TV:	EQU $b4	; 180=$b4 system interrupt, $b4 -> 200Hz, 5ms
