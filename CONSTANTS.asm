@@ -108,25 +108,32 @@ SYSTMR7:	EQU MONVARS + $b7		; hours
 SYSTMR8:	EQU MONVARS + $b8		; days, 16 bit
 SYSTMR9:	EQU MONVARS + $b9
 
+;i8255
+i8255CNF		EQU MONVARS + $e2
 ; SIO
-SIOA_WR0:		EQU MONVARS + $e7
-SIOA_WR1:		EQU MONVARS + $e8
-SIOA_WR3:		EQU MONVARS + $e9
-SIOA_WR4:		EQU MONVARS + $ea
-SIOA_WR5:		EQU MONVARS + $eb
-SIOA_WR6:		EQU MONVARS + $ec
-SIOA_WR7:		EQU MONVARS + $ed
-SIOB_WR0:		EQU MONVARS + $ee
-SIOB_WR1:		EQU MONVARS + $ef
-SIOB_WR2:		EQU MONVARS + $f0
-SIOB_WR3:		EQU MONVARS + $f1
-SIOB_WR4:		EQU MONVARS + $f2
-SIOB_WR5:		EQU MONVARS + $f3
-SIOB_WR6:		EQU MONVARS + $f4
-SIOB_WR7:		EQU MONVARS + $f5
+SIOA_WR0:		EQU MONVARS + $e3
+SIOA_WR1:		EQU MONVARS + $e4
+SIOA_WR3:		EQU MONVARS + $e5
+SIOA_WR4:		EQU MONVARS + $e6
+SIOA_WR5:		EQU MONVARS + $e7
+SIOA_WR6:		EQU MONVARS + $e8
+SIOA_WR7:		EQU MONVARS + $e9
+SIOB_WR0:		EQU MONVARS + $ea
+SIOB_WR1:		EQU MONVARS + $eb
+SIOB_WR2:		EQU MONVARS + $ec
+SIOB_WR3:		EQU MONVARS + $ed
+SIOB_WR4:		EQU MONVARS + $ee
+SIOB_WR5:		EQU MONVARS + $ef
+SIOB_WR6:		EQU MONVARS + $f0
+SIOB_WR7:		EQU MONVARS + $f1
 ; PIO
-PIO_CH0_CNF:	EQU MONVARS + $f6
-PIO_CH1_CNF:	EQU MONVARS + $f7
+PIOA_CNF:		EQU MONVARS + $f2
+PIOA_INT_CTRL:	EQU MONVARS + $f3
+PIOA_INT_EN:	EQU MONVARS + $f4
+PIOB_CNF:		EQU MONVARS + $f5
+PIOB_INT_CTRL:	EQU MONVARS + $f6
+PIOB_INT_EN:	EQU MONVARS + $f7
+
 ; CTC prescaler value locations
 CTC_CH0_CNF:	EQU MONVARS + $f8
 CTC_CH1_CNF:	EQU MONVARS + $f9
@@ -140,8 +147,12 @@ CTC_CH3_TC:	EQU MONVARS + $ff		; time constant for channel 3 this feeds SIOA
 
 
 ; ### IO map
-;IOM-MPF-IP ports:
-UART_BASE:	EQU 008h         ; Base port address, P8250A/USART uses 8 ports.
+IOAY		EQU 000h		; AY on IO board
+IOYMZ		EQU 002h		; YMZ on IO board
+IOFRQSRC	EQU 004h		; IO board frequency source for sound chips
+IOFRQDIV	EQU 005h		; IO board frequency divider for sound chips
+UART_BASE:	EQU 008h		; Base port address, P8250A/USART uses 8 ports.
+
 CTC_BASE:	EQU 040H         ; Base port address for Z80 CTC, only CTC2 is used. 64h
 CTC_CH0:	EQU CTC_BASE		; system interrupt 200Hz
 CTC_CH1:	EQU CTC_BASE+1
@@ -157,7 +168,13 @@ PIO_DA:	EQU PIO_BASE+0
 PIO_DB:	EQU PIO_BASE+2
 PIO_CA:	EQU PIO_BASE+1
 PIO_CB:	EQU PIO_BASE+3
+
+if MACHINE = "AL80"
 i8255A:	EQU 4Ch
+i8255B:	EQU 4Dh
+i8255C:	EQU 4Eh
+i8255D:	EQU 4Fh
+endif
 
 ;CNFIGSW	EQU $a0	; config switch read only
 ymbase:	EQU $b0	; 02 address reg 03 data reg, on mint board $70/$b0
@@ -189,6 +206,10 @@ ymcs:	equ 	$f6	; f6 address reg f7 data reg
 memmap:	EQU $f8	; memory map $d8-$df
 
 ; ### other
+
+;i8255 default config
+i8255_CV			EQU 10011011b	; all inputs in mode 0
+
 ; SIO config values
 SIOA_WR0_CV:		EQU 00110000b	; write into WR0: error reset
 SIOA_WR1_CV:		EQU 00000000b	; no interrupts
@@ -218,8 +239,12 @@ SIOB_WR6_CV:		EQU 0
 SIOB_WR7_CV:		EQU 0
 
 ; PIO config values
-PIO_CH0_CNFV:	EQU 11001111b
-PIO_CH1_CNFV:	EQU 11001111b
+PIOA_CNFV:		EQU 11001111b
+PIOA_INT_CTRV:	EQU 00000111b	; interrupt control word
+PIOA_INT_ENV:	EQU 00000011b	; interrupt disable
+PIOB_CNFV:		EQU 11001111b
+PIOB_INT_CTRV:	EQU 00000111b	; interrupt control word
+PIOB_INT_ENV:	EQU 00000011b	; interrupt disable
 
 ; CTC config values
 if MACHINE = "AL80"
@@ -293,3 +318,13 @@ HEXLINES:	EQU 17 ; FIXIT: There is a off-by-one-error here
 ;$e000-$ffff RAM	df 00->rom1, 02->rom3
 
 ; rom0-rom3 refer to 8K chunks of 28C256 32K EEPROM
+
+; AL80
+; f8: 00->rom0, 01->ram0, 02->rom0, 03->ram8, 04->rom0, 05->none, 06->rom0, 07->none, 08->rom0, 09->ram0
+; f9: 00->rom0, 01->ram1, 02->rom0, 03->ram9, 04->rom0, 05->none, 06->rom0, 07->none, 08->rom0, 09->ram1
+; fa: 00->rom0, 01->ram2, 02->rom0, 03->rama, 04->rom0, 05->none, 06->rom0, 07->none, 08->rom0, 09->ram2
+; fb: 00->rom0, 01->ram3, 02->rom0, 03->ramb, 04->rom0, 05->none, 06->rom0, 07->none, 08->rom0, 09->ram3
+; fc: 00->rom0, 01->ram4, 02->rom0, 03->ramc, 04->rom0, 05->none, 06->rom0, 07->none, 08->rom0, 09->ram4
+; fd: 00->rom0, 01->ram5, 02->rom0, 03->ramd, 04->rom0, 05->none, 06->rom0, 07->none, 08->rom0, 09->ram5
+; fe: 00->rom0, 01->ram6, 02->rom0, 03->rame, 04->rom0, 05->none, 06->rom0, 07->none, 08->rom0, 09->ram6
+; ff: 00->rom0, 01->ram7, 02->rom0, 03->ramf, 04->rom0, 05->none, 06->rom0, 07->none, 08->rom0, 09->ram7
