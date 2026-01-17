@@ -5,6 +5,8 @@ VERSMIN:    EQU     "3"
 CLKDIV	EQU $a2		; upper nibble:PSGCLK, lower nibble:(SYSCLK MHz/2/(value+1)), 6.666MHz
 SYSCLK	EQU "6.66"
 MACHINE	EQU "AL80"
+SIOCLK	EQU 1843200
+CPUCLK	EQU 6666666
 
 ; Constants, extracted to make the versioned file hardware agnostic
 
@@ -248,8 +250,8 @@ PIOB_INT_ENV:	EQU 00000011b	; interrupt disable
 
 ; CTC config values
 if MACHINE = "AL80"
-CTC_CH0_CNFV:	EQU 01010111b	; no int, counter, /16 prescaler
-CTC_CH1_CNFV:	EQU 01010111b	; no int, counter, /16 prescaler
+CTC_CH0_CNFV:	EQU 01010111b	; no int, counter, no prescaler
+CTC_CH1_CNFV:	EQU 01010111b	; no int, counter, no prescaler
 if EN_INT
 CTC_CH2_CNFV:	EQU 10100111b	; int, timer, /256 prescaler
 CTC_CH3_CNFV:	EQU 10100111b	; int, timer, /256 prescaler
@@ -266,10 +268,10 @@ endif
 
 ; CTC time constants values
 if MACHINE = "AL80"
-CTC_CH0_TV:	EQU $60	; SIOA 19200 baud with 16x prescaler in CTC and 16x prescaler in SIO ; @1.8432MHz CLK: 0x01=115200baud, 0x02=57600b, 0x03=38400b, 0x06=19200b, 0x08=14400b, 0x0c=9600b, 0x18=4800b
-CTC_CH1_TV:	EQU $60	; SIOB 19200 baud with 16x prescaler in CTC and 1x prescaler in SIO ; @1.8432MHz CLK: 0x08=230400baud, 0x10=115200b, 0x20=57600b, 0x30=38400b, 0x60=19200b, 0x80=14400b, 0xc0=9600b
-CTC_CH2_TV:	EQU $1a	; @6.66MHz $1a -> 1000Hz, 1ms
-CTC_CH3_TV:	EQU $82	; @6.66MHz $82 -> 200Hz, 5ms
+CTC_CH0_TV:	EQU (SIOCLK/19200)	; SIOA 19200 baud with no prescaler in CTC and no prescaler in SIO
+CTC_CH1_TV:	EQU (SIOCLK/19200)	; SIOB 19200 baud with no prescaler in CTC and no prescaler in SIO
+CTC_CH2_TV:	EQU (CPUCLK/(1000*256))	; @6.66MHz with 256 prescaler in CTC $1a -> 1000Hz, 1ms
+CTC_CH3_TV:	EQU (CPUCLK/(200*256))	; @6.66MHz with 256 prescaler in CTC $82 -> 200Hz, 5ms
 else
 CTC_CH0_TV:	EQU $24	; $24 -> 1000Hz, 1ms, $12 -> 2000Hz, 500us
 CTC_CH1_TV:	EQU $b4	; 180=$b4 system interrupt, $b4 -> 200Hz, 5ms
