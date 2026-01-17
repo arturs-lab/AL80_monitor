@@ -152,7 +152,12 @@ LE_TMP	EQU $FF00	; temporary code location
 
 LOAD_EEPROM:	call jCON_PRT_STR_SP
 zoWarnFlow = false
-	db $0d,$0a,"Run from CF buffer",0Dh,0Ah,"1 - monitor at $A000",$0d,$0a,"2 - Basic 9k",$0d,$0a,"3 - Hot start Basic 9k",$0d,$0a,EOS
+	db $0d,$0a,"Run from CF buffer"
+	db 0Dh,0Ah,"1 - monitor at $A000"
+	db $0d,$0a,"2 - Basic 9k"
+	db $0d,$0a,"3 - Hot start Basic 9k"
+	db $0d,$0a,"4 - VTL @ $f800 (RAM @ $4000)"
+	db $0d,$0a,EOS
 zoWarnFlow = true
 	call CON_GET_CHAR
 	cp a,"1"
@@ -178,12 +183,20 @@ LE2:	cp a,"2"
 	jp LE_TMP
 
 LE_3:	cp a,"3"
-	ret nz
+	jr nz,LE_4
 	ld hl,LE_hot
 	ld de,LE_TMP
 	ld bc,LE_REND-LE_hot
 	ldir
 	jp LE_TMP
+
+LE_4:	cp a,"4"
+	ret nz
+	ld hl,$1c00	; VTL got squeezed into this bit of free space for now. Until monitor grows more
+	ld de,$f800
+	ld bc,$0400
+	ldir
+	jp $f800
 
 LE_RUN:	if def ROM_BOTTOM_a000	; if we're running from $a000 then leave interrupts enabled in Basic so that we can use timer
 		nop
