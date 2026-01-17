@@ -165,8 +165,8 @@ SIO_DB:	EQU SIO_BASE+1
 SIO_CB:	EQU SIO_BASE+3
 PIO_BASE:	EQU 48h         ; Base port address for Z80 PIO, not used. 68h
 PIO_DA:	EQU PIO_BASE+0
-PIO_DB:	EQU PIO_BASE+2
 PIO_CA:	EQU PIO_BASE+1
+PIO_DB:	EQU PIO_BASE+2
 PIO_CB:	EQU PIO_BASE+3
 
 if MACHINE = "AL80"
@@ -268,7 +268,7 @@ endif
 if MACHINE = "AL80"
 CTC_CH0_TV:	EQU $60	; SIOA 19200 baud with 16x prescaler in CTC and 16x prescaler in SIO ; @1.8432MHz CLK: 0x01=115200baud, 0x02=57600b, 0x03=38400b, 0x06=19200b, 0x08=14400b, 0x0c=9600b, 0x18=4800b
 CTC_CH1_TV:	EQU $60	; SIOB 19200 baud with 16x prescaler in CTC and 1x prescaler in SIO ; @1.8432MHz CLK: 0x08=230400baud, 0x10=115200b, 0x20=57600b, 0x30=38400b, 0x60=19200b, 0x80=14400b, 0xc0=9600b
-CTC_CH2_TV:	EQU $0d	; @6.66MHz $0d -> 2000Hz, 500us
+CTC_CH2_TV:	EQU $1a	; @6.66MHz $1a -> 1000Hz, 1ms
 CTC_CH3_TV:	EQU $82	; @6.66MHz $82 -> 200Hz, 5ms
 else
 CTC_CH0_TV:	EQU $24	; $24 -> 1000Hz, 1ms, $12 -> 2000Hz, 500us
