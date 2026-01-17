@@ -145,12 +145,14 @@ sp_p16a:	ld a,(hl)
 ;***************************************************************************
 ;LOAD_EEPROM_COMMAND
 ;Function: Load code from EEPROM and execute it
+; This is code taken from MintZ80 where EEPROM is big enough to hold extra code
+; for AL80, code is expected to have been loaded from CF and be sitting in RAM starting at $C000
 ;***************************************************************************
 LE_TMP	EQU $FF00	; temporary code location
 
 LOAD_EEPROM:	call jCON_PRT_STR_SP
 zoWarnFlow = false
-	db $0d,$0a,"Run from EEPROM",0Dh,0Ah,"1 - monitor at $A000",$0d,$0a,"2 - Basic 9k",$0d,$0a,"3 - Hot start Basic 9k",$0d,$0a,EOS
+	db $0d,$0a,"Run from CF buffer",0Dh,0Ah,"1 - monitor at $A000",$0d,$0a,"2 - Basic 9k",$0d,$0a,"3 - Hot start Basic 9k",$0d,$0a,EOS
 zoWarnFlow = true
 	call CON_GET_CHAR
 	cp a,"1"
@@ -161,14 +163,10 @@ zoWarnFlow = true
 	ldir
 	jp LE_TMP
 
-LE_A:	ld a,00
-	out ($db),a
-	ld hl,$6000
+LE_A:	ld hl,$e200
 	ld de,$a000
-	ld bc,$2000
+	ld bc,$1c00
 	ldir
-	ld a,01
-	out ($db),a
 	jp $a000
 
 LE2:	cp a,"2"
@@ -187,24 +185,33 @@ LE_3:	cp a,"3"
 	ldir
 	jp LE_TMP
 
-LE_RUN:	di
-	ld a,03		; switch first 2 banks to RAM
-	out ($d8),a
-	out ($d9),a
-	ld a,02		; switch next two banks to EEPROM2,3
-	out ($da),a
-	out ($db),a
-	ld hl,$4000
+LE_RUN:	if def ROM_BOTTOM_a000	; if we're running from $a000 then leave interrupts enabled in Basic so that we can use timer
+		nop
+	else	; if running monitor from $0, then turn off interrupts since ISRs are located in RAM used by Basic
+		di
+	endif
+	ld a,03		; switch first $0000-$9fff memory to RAM page 3
+	out (memmap),a
+	out (memmap+1),a
+	out (memmap+2),a
+	out (memmap+3),a
+	out (memmap+4),a
+	ld hl,$c200	; just behind bootloader is code for Basic
 	ld de,$0000
-	ld bc,$4000
+	ld bc,$2000	; this is the 8K version
 	ldir
-	ld a,01		; switch bank 2,3 to RAM
-	out ($da),a
-	out ($db),a
-LE_hot:	di
-	ld a,03		; switch first 2 banks to RAM. We can enter here if basic was already loaded
-	out ($d8),a
-	out ($d9),a
+LE_hot:	if def ROM_BOTTOM_a000
+		nop
+	else
+		di
+	endif
+
+	ld a,03		; switch first 5 banks to RAM. We can enter here if basic was already loaded
+	out (memmap),a
+	out (memmap+1),a
+	out (memmap+2),a
+	out (memmap+3),a
+	out (memmap+4),a
 	jp $0000
 LE_REND:
 
