@@ -3,7 +3,7 @@ VERSMIN:    EQU     "3"
 
 ; clock divider
 CLKDIV	EQU $a2		; upper nibble:PSGCLK, lower nibble:(SYSCLK MHz/2/(value+1)), 6.666MHz
-SYSCLK	EQU "6.66"
+SYSCLK	EQU "6.666"
 MACHINE	EQU "AL80"
 SIOCLK	EQU 1843200
 CPUCLK	EQU 6666666
@@ -120,9 +120,9 @@ SIOA_WR4:		EQU MONVARS + $e6
 SIOA_WR5:		EQU MONVARS + $e7
 SIOA_WR6:		EQU MONVARS + $e8
 SIOA_WR7:		EQU MONVARS + $e9
-SIOB_WR0:		EQU MONVARS + $ea
-SIOB_WR1:		EQU MONVARS + $eb
-SIOB_WR2:		EQU MONVARS + $ec
+SIOB_WR2:		EQU MONVARS + $ea
+SIOB_WR0:		EQU MONVARS + $eb
+SIOB_WR1:		EQU MONVARS + $ec
 SIOB_WR3:		EQU MONVARS + $ed
 SIOB_WR4:		EQU MONVARS + $ee
 SIOB_WR5:		EQU MONVARS + $ef
@@ -160,11 +160,13 @@ CTC_CH0:	EQU CTC_BASE		; system interrupt 200Hz
 CTC_CH1:	EQU CTC_BASE+1
 CTC_CH2:	EQU CTC_BASE+2		; this feeds SIOB
 CTC_CH3:	EQU CTC_BASE+3		; this feeds SIOA
+
 SIO_BASE:	EQU 44h			; SIO port
 SIO_DA:	EQU SIO_BASE
 SIO_CA:	EQU SIO_BASE+2
 SIO_DB:	EQU SIO_BASE+1
 SIO_CB:	EQU SIO_BASE+3
+
 PIO_BASE:	EQU 48h         ; Base port address for Z80 PIO, not used. 68h
 PIO_DA:	EQU PIO_BASE+0
 PIO_CA:	EQU PIO_BASE+1
@@ -215,7 +217,7 @@ i8255_CV			EQU 10011011b	; all inputs in mode 0
 ; SIO config values
 SIOA_WR0_CV:		EQU 00110000b	; write into WR0: error reset
 SIOA_WR1_CV:		EQU 00000000b	; no interrupts
-SIOA_WR3_CV:		EQU 00001100b	; write into WR3: RX disable;
+SIOA_WR3_CV:		EQU 11100001b	; write into WR3: RX enable;
 if MACHINE = "AL80"
 SIOA_WR4_CV:		EQU 00000100b	; write into WR4: presc. 1x, 1 stop bit, no parity
 else
@@ -224,19 +226,23 @@ endif
 SIOA_WR5_CV:		EQU 11101000b	; write into WR5: DTR on, TX 8 bits, BREAK off, TX on, RTS off
 SIOA_WR6_CV:		EQU 0
 SIOA_WR7_CV:		EQU 0
+
 SIOB_WR0_CV:		EQU 0
-if EN_INT
-SIOB_WR1_CV:		EQU 00011100b	; RX int enable, parity does not affect vector, status affects vector
-else
-SIOB_WR1_CV:		EQU 00000100b	; RX int enable, parity does not affect vector, status affects vector
-endif
-SIOB_WR2_CV:		EQU SIOV		; write into WR2: set interrupt vector, but bits D3/D2/D1 of this vector
+;if EN_INT
+;SIOB_WR1_CV:		EQU 00011100b	; RX int enable, parity does not affect vector, status affects vector
+;else
+SIOB_WR1_CV:		EQU 00000100b	; RX int disable, parity does not affect vector, status affects vector
+;endif
+SIOB_WR2_CV:		EQU SIOV		; set interrupt vector, but bits D3/D2/D1 of this vector
 							; will be affected by the channel & condition that raised the interrupt
-							; (see datasheet): in our example, 0x0C for Ch.A receiving a char, 0x0E
-							; for special conditions
-SIOB_WR3_CV:		EQU 0
-SIOB_WR4_CV:		EQU 0
-SIOB_WR5_CV:		EQU 0
+							; (see datasheet)
+SIOB_WR3_CV:		EQU 11100001b	; write into WR3: RX enable;
+if MACHINE = "AL80"
+SIOB_WR4_CV:		EQU 00000100b	; write into WR4: presc. 1x, 1 stop bit, no parity
+else
+SIOB_WR4_CV:		EQU 01000100b	; write into WR4: presc. 16x, 1 stop bit, no parity
+endif
+SIOB_WR5_CV:		EQU 11101000b	; write into WR5: DTR on, TX 8 bits, BREAK off, TX on, RTS off
 SIOB_WR6_CV:		EQU 0
 SIOB_WR7_CV:		EQU 0
 
