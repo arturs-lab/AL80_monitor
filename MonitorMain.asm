@@ -94,7 +94,7 @@ chime:	ld bc,$0200	; bc = duration
 
 ; bc = duration, a = pitch
 beep:	push af
-bep1:	in a,(beepr)
+bep1:	out (beepr),a
 	pop af
 	push af
 	call delay
@@ -105,8 +105,7 @@ bep1:	in a,(beepr)
 	pop af
 	ret
 
-memmap_init:	out (beepr),a	; unlock memmap
-	ld a,0		; init mem map
+memmap_init:	ld a,0		; init mem map
 	out (memmap),a
 	ld a,1
 	out (memmap+1),a
@@ -116,7 +115,6 @@ memmap_init:	out (beepr),a	; unlock memmap
 	out (memmap+5),a
 	out (memmap+6),a
 	out (memmap+7),a
-	in a,(beepr)	; lock memmap
 	ret
 
 ;		include "irqtab.asm"		; table for interrupts
@@ -173,9 +171,13 @@ if MACHINE = "MintZ80"
 	out ($f4),a	; set INTPR register, SIO-CTC-PIO priority. section 3.9, page 149
 endif
 
-if MACHINE = "AL80"
-	call memmap_init	; AL80 does not initialize memap on reset reliably
+if INIT_MEMMAP
+	call memmap_init	; before using RAM, make sure all mem pages are set as expected
 ; maybe even move memap_init code here to avoid using stack since that mem page can be wrong too.
+else
+	nop
+	nop
+	nop
 endif
 
 	ld a,$20
@@ -205,6 +207,7 @@ if EN_INT
 else
 	nop				; leave room for EI for testing
 endif
+
 	call CON_PRT_STR_SP	; print banner
 zoWarnFlow = false
 	db $0d,$0a,"Hellorld",$0d,$0a,"CPLD config:",0
@@ -217,10 +220,8 @@ zoWarnFlow = true
 
 	call dmpio			; dump CPLD configuration
 
-	call CON_PRT_STR_SP	; print banner
-zoWarnFlow = false
-	db "System clock ",SYSCLK,"MHz",$0d,$0a,0
-zoWarnFlow = true
+	ld hl,banner
+	call CON_PRT_STR	; print banner
 
 	ld hl,R_MAIN		; Calculate my own checksum
 	ld (MVADDR+0),hl
@@ -422,4 +423,6 @@ jphl:		jp (hl)
 
 ;		INCLUDE	"DARTDriver.asm"
 		INCLUDE	"UARTDriver.asm"
+
+banner:	db CPU," System clock ",SYSCLK,"MHz",$0d,$0a,0
 
