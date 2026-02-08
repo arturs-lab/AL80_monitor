@@ -7,9 +7,10 @@ CTC_INIT_ALL: push af
 		pop af
 		ret
 
-;init CH0
-;CH0 divides CLK/TRG0 clock providing a clock signal at TO0.
-; T00 outputs f= CLK/TRG / 0x34 => 4MHz / 52 => 38461
+; init CH0
+; CH0 divides on CLK/TRG0 clock providing a clock signal at TO0.
+; it drives SIO channel A
+; TRG0 is drivven from 1.8432MHz oscillator
 CTC0_INIT: ld a,CTCV+0	; load CTC interrupt vector
 	out (CTC_CH0),a		; set CTC T0 to that vector
 	ld a,(CTC_CH0_CNF)	; interrupt off, counter mode, prescaler=256 (doesn't matter), ext. start,
@@ -20,9 +21,10 @@ CTC0_INIT: ld a,CTCV+0	; load CTC interrupt vector
 	ret
 
 
-;init CH1
-;CH3 divides CLK/TRG1 clock providing a clock signal at TO1.
-; T01 outputs f= CLK/TRG / 4  => 4MHz / 4 => 1MHz
+; init CH1
+; CH1 divides CLK/TRG1 clock providing a clock signal at TO1.
+; it drives SIO channel B
+; TRG1 is drivven from 1.8432MHz oscillator
 CTC1_INIT: ld a,CTCV+2	; load CTC interrupt vector
 	out (CTC_CH1),a		; set CTC T1 to that vector
 	ld a,(CTC_CH1_CNF)	; interrupt off, counter mode, prescaler=256 (doesn't matter), ext. start,
@@ -32,8 +34,9 @@ CTC1_INIT: ld a,CTCV+2	; load CTC interrupt vector
 	out (CTC_CH1),a		; loaded into channel 3
 	ret
 
-;CH2 divides CPU CLK by (256*CTC_CH0_TC) providing a clock signal at TO2.
-; T02 outputs f= CPU_CLK/(256*CTC_CH0_TC) => 9.216MHz / ( 256 * 180 ) => 200Hz
+; CH2 divides SIOCLK CLK by (16*CTC_CH2_TC) providing a clock signal at TO2.
+; it also generates interrupt for millisecond timer at SYSTMR0-3
+; TRG2 can be drivven from CPUCLK, 1.8432MHz oscillator or external source
 CTC2_INIT: ld a,CTCV+4	; load CTC interrupt vector
 	out (CTC_CH2),a		; set CTC T2 to that vector
 	ld a,(CTC_CH2_CNF)	; interrupt off; timer mode; prescaler=256; don't care ext; automatic trigger;
@@ -43,7 +46,9 @@ CTC2_INIT: ld a,CTCV+4	; load CTC interrupt vector
 	out (CTC_CH2),a
 	ret
 
-;init CH3
+; CH3 divides SIOCLK CLK by (16*CTC_CH3_TC) providing a clock signal at TO3.
+; it also generates interrupt for 5 millisecond timer and clock at SYSTMR4-9
+; TRG3 can be drivven from CPUCLK, 1.8432MHz oscillator or external source
 CTC3_INIT: ld a,CTCV+6	; load CTC interrupt vector
 	out (CTC_CH3),a		; set CTC T0 to that vector
 	ld a,(CTC_CH3_CNF)	; interrupt off, timer mode, prescaler=16, don't care ext. TRG edge,
