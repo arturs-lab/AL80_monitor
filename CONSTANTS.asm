@@ -7,6 +7,7 @@ SYSCLK	EQU "6.666"
 MACHINE	EQU "AL80"
 SIOCLK	EQU 1843200
 CPUCLK	EQU 6666666
+CPU		EQU "Z80"
 
 ; Constants, extracted to make the versioned file hardware agnostic
 
@@ -14,8 +15,15 @@ CPUCLK	EQU 6666666
 ; but I want flexibility to include it but not use for console.
 USE_UART:	EQU true
 
-; do wew want to enable interrupts?
+; do we want to enable interrupts?
 EN_INT:	EQU true
+
+; do we want to init memmap
+if MACHINE="AL80"
+INIT_MEMMAP:	EQU true
+else
+INIT_MEMMAP:	EQU false
+endif
 
 ; ### MEM map
 RAM_BOTTOM:	EQU 02000H       ; Bottom address of RAM
@@ -217,7 +225,7 @@ i8255_CV			EQU 10011011b	; all inputs in mode 0
 ; SIO config values
 SIOA_WR0_CV:		EQU 00110000b	; write into WR0: error reset
 SIOA_WR1_CV:		EQU 00000000b	; no interrupts
-SIOA_WR3_CV:		EQU 11100001b	; write into WR3: RX enable;
+SIOA_WR3_CV:		EQU 11000001b	; write into WR3: RX enable;
 if MACHINE = "AL80"
 SIOA_WR4_CV:		EQU 00000100b	; write into WR4: presc. 1x, 1 stop bit, no parity
 else
@@ -236,7 +244,7 @@ SIOB_WR1_CV:		EQU 00000100b	; RX int disable, parity does not affect vector, sta
 SIOB_WR2_CV:		EQU SIOV		; set interrupt vector, but bits D3/D2/D1 of this vector
 							; will be affected by the channel & condition that raised the interrupt
 							; (see datasheet)
-SIOB_WR3_CV:		EQU 11100001b	; write into WR3: RX enable;
+SIOB_WR3_CV:		EQU 11000001b	; write into WR3: RX enable;
 if MACHINE = "AL80"
 SIOB_WR4_CV:		EQU 00000100b	; write into WR4: presc. 1x, 1 stop bit, no parity
 else
@@ -328,11 +336,11 @@ HEXLINES:	EQU 17 ; FIXIT: There is a off-by-one-error here
 ; rom0-rom3 refer to 8K chunks of 28C256 32K EEPROM
 
 ; AL80
-; f8: 00->rom0, 01->ram0, 02->rom0, 03->ram8, 04->rom0, 05->none, 06->rom0, 07->none, 08->rom0, 09->ram0
-; f9: 00->rom0, 01->ram1, 02->rom0, 03->ram9, 04->rom0, 05->none, 06->rom0, 07->none, 08->rom0, 09->ram1
-; fa: 00->rom0, 01->ram2, 02->rom0, 03->rama, 04->rom0, 05->none, 06->rom0, 07->none, 08->rom0, 09->ram2
-; fb: 00->rom0, 01->ram3, 02->rom0, 03->ramb, 04->rom0, 05->none, 06->rom0, 07->none, 08->rom0, 09->ram3
-; fc: 00->rom0, 01->ram4, 02->rom0, 03->ramc, 04->rom0, 05->none, 06->rom0, 07->none, 08->rom0, 09->ram4
-; fd: 00->rom0, 01->ram5, 02->rom0, 03->ramd, 04->rom0, 05->none, 06->rom0, 07->none, 08->rom0, 09->ram5
-; fe: 00->rom0, 01->ram6, 02->rom0, 03->rame, 04->rom0, 05->none, 06->rom0, 07->none, 08->rom0, 09->ram6
-; ff: 00->rom0, 01->ram7, 02->rom0, 03->ramf, 04->rom0, 05->none, 06->rom0, 07->none, 08->rom0, 09->ram7
+; f8: 00->rom0, 01->ram0, 02->rom0, 03->ram8, 04->rom0, 05->ram10, 06->rom0, 07->ram18, 08->rom0, 09->ram20, 0B->ram28, 0D->ram30, 0F->ram38
+; f9: 00->rom0, 01->ram1, 02->rom0, 03->ram9, 04->rom0, 05->ram11, 06->rom0, 07->ram19, 08->rom0, 09->ram21, 0B->ram29, 0D->ram31, 0F->ram39
+; fa: 00->rom0, 01->ram2, 02->rom0, 03->rama, 04->rom0, 05->ram12, 06->rom0, 07->ram1A, 08->rom0, 09->ram22, 0B->ram2A, 0D->ram32, 0F->ram3A
+; fb: 00->rom0, 01->ram3, 02->rom0, 03->ramb, 04->rom0, 05->ram13, 06->rom0, 07->ram1B, 08->rom0, 09->ram23, 0B->ram2B, 0D->ram33, 0F->ram3B
+; fc: 00->rom0, 01->ram4, 02->rom0, 03->ramc, 04->rom0, 05->ram14, 06->rom0, 07->ram1C, 08->rom0, 09->ram24, 0B->ram2C, 0D->ram34, 0F->ram3C
+; fd: 00->rom0, 01->ram5, 02->rom0, 03->ramd, 04->rom0, 05->ram15, 06->rom0, 07->ram1D, 08->rom0, 09->ram25, 0B->ram2D, 0D->ram35, 0F->ram3D
+; fe: 00->rom0, 01->ram6, 02->rom0, 03->rame, 04->rom0, 05->ram16, 06->rom0, 07->ram1E, 08->rom0, 09->ram26, 0B->ram2E, 0D->ram36, 0F->ram3E
+; ff: 00->rom0, 01->ram7, 02->rom0, 03->ramf, 04->rom0, 05->ram17, 06->rom0, 07->ram1F, 08->rom0, 09->ram27, 0B->ram2F, 0D->ram37, 0F->ram3F
