@@ -10,7 +10,9 @@
 ;
 ; SAVE "name" CODE 60000 5024
 
-CPUCLKD	EQU 0
+;MUSICSZ	EQU $03E8
+MUSICSZ	EQU $0200 - $0070
+CPUCLKD	EQU 2
 ;CHIP		EQU "AY"		; IO card AY-3-8910
 ;CHIP		EQU "YMZio"	; IO card YMZ
 CHIP		EQU "YMZ"		; onboard YMZ
@@ -35,22 +37,16 @@ FRQDIV	EQU	$a0
 IOPORT	EQU	turbo
 endif
 
-MUSIC1	EQU	PLAYER + $0500
-MUSIC2	EQU	PLAYER + $08E8
-MUSIC3	EQU	PLAYER + $0cD0
-XTRA		EQU	PLAYER + $10B8
-XTRAEND	EQU	XTRA + 385
-
-;MUSIC1	EQU	$EA60
-;MUSIC2	EQU	$EE48
-;MUSIC3	EQU	$F230
-;XTRA		EQU	$F618
-;XTRAEND	EQU	XTRA + 385
-;PLAYER	EQU	$FA00
+MUSIC1	EQU	PLAYER + $0500 - $00c0
+MUSIC2	EQU	MUSIC1 + MUSICSZ
+MUSIC3	EQU	MUSIC2 + MUSICSZ
+XTRA		EQU	MUSIC3 + MUSICSZ
+XTRAEND	EQU	XTRA + 385	; $181 bytes = 385 - actual length of this song
 
 	ORG	PLAYER
 
-FA00	EQU $
+START:
+FA00:
 if CHIP = "YMZ"		; onboard YMZ
 	in a,(IOPORT)
 	and a,$0f
@@ -62,25 +58,22 @@ else				; sound chip on IIO board
 	ld a,FRQDIV	; freq divider
 	out (IOPORT),a
 endif
-/*
-	in a,(turbo)		; get current clock divider
-	push af
-if CPUCLKD = 0
-	ld a,$0	; cpu frequency
-else
-	ld a,$1	; cpu frequency
-endif
-	out (turbo),a
-*/
+
 if CPUCLKD = 0
 	ld a,$c0		; playback speed
 else
 	ld a,$e0		; playback speed
 endif
 	ld (PBSPEED),a
+	ld a,(ctrl)
+	ld ays+1,a
+	ld a,(dta)
+	ld ayd+1,a
 	call jCON_PRT_NL
 	jp	FBA5		; initialize note pointers and start playing
 
+ctrl	db $b0
+dta	db $b1
 
 ; updated by $FBF4, $FCAB
 ; 
@@ -145,7 +138,7 @@ CHCMUSICPTR	DW	MUSIC3	; channel C music data address, $F230
 
 ; updated by $FB51 $FBA5
 EFFECTPTR	EQU $
-FA3A	DB	XTRA,XTRA>>8	; some other table, 1000 bytes up from $F23C, CHCMUSICPTR, should be $F618 per new locations
+FA3A	DB	XTRA,XTRA>>8				; some other table, 1000 bytes up from $F23C, CHCMUSICPTR, should be $F618 per new locations
 	DW	XTRA+1
 
 ; read by $FC72
@@ -251,7 +244,7 @@ prs:	call jCON_TX
 ; initialize note pointers 
 FBA5	ld	hl,MUSIC1	; EA60 location of music
 	ld	de,CHAMUSICPTR	; 
-	ld	bc,$03E8	; 1000 decimal - length of channel data
+	ld	bc,MUSICSZ	; 1000 decimal - length of channel data
 	call	FBBD		; store location of data for channel A - EA60 -> FA2E
 	call	FBBD		; store location of data for channel B - EE48 -> FA32
 	call	FBBD		; store location of data for channel C - F230 -> FA36
@@ -274,10 +267,6 @@ FBC7	ld	d,$07	; Write FF to register 7 - disable all channels. Should be 3F to n
 	ld	e,$FF
 	call	AYWRITE
 ;	ei
-/*
-	pop af			; restore original clock
-	out (turbo),a
-*/
 	xor a				; return with A=0
 	ret		; exit
 
@@ -610,9 +599,9 @@ FDAC	ld	c,h
 	ret
 
 AYWRITE	push	bc		; write value in E to AY register given in D
-	ld	bc,AYSEL	; AY register select
+ays	ld	bc,AYSEL	; AY register select
 	out	(c),d
-	ld	bc,AYDTA	; AY register value
+ayd	ld	bc,AYDTA	; AY register value
 	out	(c),e
 	pop	bc
 	inc	d		; point to next AY register
@@ -786,15 +775,11 @@ XTRAEND	DB	$3f
 endprog	equ $
 
 if CHIP = "AY"
-;	output_bin "aytest.bin",PLAYER,endprog-PLAYER		; The binary file
+	output_bin "aytest.bin",PLAYER,endprog-PLAYER		; The binary file
 	output_intel "aytest.hex",PLAYER,endprog-PLAYER		; The binary file
 	output_list "aytest.lst"
-elif CHIP = "YMZio"
-;	output_bin "ymziotest.bin",PLAYER,endprog-PLAYER		; The binary file
-	output_intel "ymziotest.hex",PLAYER,endprog-PLAYER		; The binary file
-	output_list "ymziotest.lst"
 else
-;	output_bin "ymztest.bin",PLAYER,endprog-PLAYER		; The binary file
+	output_bin "ymztest.bin",PLAYER,endprog-PLAYER		; The binary file
 	output_intel "ymztest.hex",PLAYER,endprog-PLAYER		; The binary file
 	output_list "ymztest.lst"
 endif
