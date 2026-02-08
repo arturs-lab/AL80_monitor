@@ -116,9 +116,9 @@ epp_del1:	dec a
 		pop af
 		dec a
 		jr nz,epp_delay
-		in a,(beepr)
 		pop af		; restore programmed byte
-epp_p3:	cp (hl)		; compare with EEPROM content
+epp_p3:	out (beepr),a
+		cp (hl)		; compare with EEPROM content
 		jr nz,epp_p2	; repeat till readback = programmed data
 epp_p4:	inc hl
 		inc de
@@ -158,12 +158,3 @@ epp_exit:	pop af
 	endif
 
 epp_end:	equ $
-
-;deltest:	ld b,0
-;dt1:		out (beepr),a
-;		ld a,epp_del	; delay before reading back byte
-;		call epp_delay	; about 100ms
-;		dec b
-;		jr nz,dt1
-;		ret
-
