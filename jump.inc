@@ -6,7 +6,7 @@ jCON_RX		equ JUMPTAB+$06	; receive char on console
 jCON_TX		equ JUMPTAB+$09	; send char on console
 jCON_PRT_STR_SP	equ JUMPTAB+$0c	; print string pointed to by stack
 jCON_PRT_STR:	equ JUMPTAB+$0f	; print string pointed to by HL
-jCON_PRT_CHAR:	equ JUMPTAB+$12	; print character
+jCON_PRT_CHAR:	equ JUMPTAB+$12	; print character from A
 jCON_PRT_NL:	equ JUMPTAB+$15	; print CR LF
 jCON_GET_CHAR	equ JUMPTAB+$18	; get character
 jCON_CHAR_ISHEX	equ JUMPTAB+$1b	; is character valid hex
