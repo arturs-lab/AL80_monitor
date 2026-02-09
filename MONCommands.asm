@@ -12,19 +12,19 @@
 ;Function: Print help dialogue box
 ;***************************************************************************
 HLPMSG1: DEFB "ZMC80 Monitor Command List", 0Dh, 0Ah
-HLPMSG2: DEFB "? - view command list", 0Dh, 0Ah
+HLPMSG2: DEFB "? - ommand list", 0Dh, 0Ah
          DEFB "A - address range compare", 0Dh, 0Ah
-         DEFB "B - load and run code from EEPROM", 0Dh, 0Ah
+         DEFB "B - run code from EEPROM", 0Dh, 0Ah
 HLPMSGc: DEFB "C - clear screen", 0Dh, 0Ah
-HLPMSGd: DEFB "D - print 100h bytes from specified location", 0Dh, 0Ah
-HLPMSGe: DEFB "E - edit bytes in memory", 0Dh, 0Ah
-HLPMSGf: DEFB "F - fill memory range with value", 0Dh, 0Ah
-HLPMSGg: DEFB "G - jump to memory address", 0Dh, 0Ah
-HLPMSGk: DEFB "K - call to memory address", 0Dh, 0Ah
+HLPMSGd: DEFB "D - dump memory", 0Dh, 0Ah
+HLPMSGe: DEFB "E - edit memory", 0Dh, 0Ah
+HLPMSGf: DEFB "F - fill memory range", 0Dh, 0Ah
+HLPMSGg: DEFB "G - jump to address", 0Dh, 0Ah
+HLPMSGk: DEFB "K - call to address", 0Dh, 0Ah
 HLPMSGm: DEFB "M - copy bytes in memory", 0Dh, 0Ah
-         DEFB "N - read IO port", 0Dh, 0Ah
-HLPMSGo: DEFB "O - write byte to output port", 0Dh, 0Ah
-HLPMSGp: DEFB "P - print port scan (00-FF)", 0Dh, 0Ah
+         DEFB "N - read IO", 0Dh, 0Ah
+HLPMSGo: DEFB "O - write byte to IO", 0Dh, 0Ah
+HLPMSGp: DEFB "P - print IO scan (00-FF)", 0Dh, 0Ah
 HLPMSGr: DEFB "R - monitor reset", 0Dh, 0Ah
 HLPMSGs: DEFB "S - calculate checksum for memory range", 0Dh, 0Ah
 HLPMSGt: DEFB "T - test memory range", 0Dh, 0Ah
@@ -83,10 +83,12 @@ zoWarnFlow = true
 	ld l,a
 cp_lp5:	LD (MVADDR+4), HL
 
-	call jCON_PRT_STR_SP
-zoWarnFlow = false
-	db $0d,$0a,"      0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F", 0Dh, 0Ah, EOS
-zoWarnFlow = true
+;	call jCON_PRT_STR_SP
+;zoWarnFlow = false
+;	db $0d,$0a,"      0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F", 0Dh, 0Ah, EOS
+;zoWarnFlow = true
+	LD 		HL, MDC_3	
+	CALL    CON_PRT_STR
 
 	ld hl,(MVADDR+0)
 	ld de,(MVADDR+2)
@@ -145,22 +147,21 @@ sp_p16a:	ld a,(hl)
 ;***************************************************************************
 ;LOAD_EEPROM_COMMAND
 ;Function: Load code from EEPROM and execute it
-; This is code taken from MintZ80 where EEPROM is big enough to hold extra code
-; for AL80, code is expected to have been loaded from CF and be sitting in RAM starting at $C000
 ;***************************************************************************
 LE_TMP	EQU $FF00	; temporary code location
 
 LOAD_EEPROM:	call jCON_PRT_STR_SP
 zoWarnFlow = false
-	db $0d,$0a,"Run from CF buffer"
-	db 0Dh,0Ah,"1 - monitor at $A000"
+	db $0d,$0a,"Run from EEPROM"
+	db 0Dh,0Ah,"1 - monitor @ $A000"
 	db $0d,$0a,"2 - Basic 9k"
-	db $0d,$0a,"3 - Hot start Basic 9k"
-	db $0d,$0a,"4 - VTL @ $f800 (RAM @ $4000)"
+	db $0d,$0a,"3 - Hot start Basic"
+	db $0d,$0a,"4 - VTL @$f800 (RAM @ $4000)"
+	db $0d,$0a,"5 - Beverly Hills Cop @$4000"
 	db $0d,$0a,EOS
 zoWarnFlow = true
 	call CON_GET_CHAR
-	cp a,"1"
+RUN_EEPROM:	cp a,"1"
 	jr nz,LE2
 	ld hl,LE_A
 	ld de,LE_TMP
@@ -168,10 +169,16 @@ zoWarnFlow = true
 	ldir
 	jp LE_TMP
 
-LE_A:	ld hl,$e200
+LE_A:	in a,(memmap+3)
+	push af
+	xor a
+	out (memmap+3),a
+	ld hl,$6000	; eeprom $200-$3fff is mirrored here
 	ld de,$a000
 	ld bc,$1c00
 	ldir
+	pop af
+	out (memmap+3),a
 	jp $a000
 
 LE2:	cp a,"2"
@@ -191,35 +198,58 @@ LE_3:	cp a,"3"
 	jp LE_TMP
 
 LE_4:	cp a,"4"
+	jr nz,LE_5
+	ld hl,LE_VTL
+	ld de,LE_TMP
+	ld bc,LE_COP-LE_VTL
+	ldir
+	jp LE_TMP
+
+LE_5:	cp a,"5"
 	ret nz
-	ld hl,$1c00	; VTL got squeezed into this bit of free space for now. Until monitor grows more
+	ld hl,LE_COP
+	ld de,LE_TMP
+	ld bc,LE_RUN-LE_COP
+	ldir
+	jp LE_TMP
+
+LE_VTL:	in a,(memmap+3)
+	push af
+	xor a
+	out (memmap+3),a
+	ld hl,$7c00	; eeprom $3c00-$3fff
 	ld de,$f800
 	ld bc,$0400
 	ldir
+	pop af
+	out (memmap+3),a
 	jp $f800
 
-LE_RUN:	if def ROM_BOTTOM_a000	; if we're running from $a000 then leave interrupts enabled in Basic so that we can use timer
-		nop
-	else	; if running monitor from $0, then turn off interrupts since ISRs are located in RAM used by Basic
-		di
-	endif
-	ld a,03		; switch first $0000-$9fff memory to RAM page 3
+LE_COP:	in a,(memmap+3)
+	push af
+	ld a,02
+	out (memmap+3),a
+	ld hl,$7500	; eeprom $7500-$7fff
+	ld de,$4000
+	ld bc,$0b00
+	ldir
+	pop af
+	out (memmap+3),a
+	jp $4000
+
+LE_RUN:	di
+	ld a,03		; switch first 2 banks to RAM
 	out (memmap),a
 	out (memmap+1),a
+	ld a,02		; switch next two banks to EEPROM2,3
 	out (memmap+2),a
 	out (memmap+3),a
-	out (memmap+4),a
-	ld hl,$c200	; just behind bootloader is code for Basic
+	ld hl,$4000
 	ld de,$0000
-	ld bc,$2000	; this is the 8K version
+	ld bc,$4000
 	ldir
-LE_hot:	if def ROM_BOTTOM_a000
-		nop
-	else
-		di
-	endif
-
-	ld a,03		; switch first 5 banks to RAM. We can enter here if basic was already loaded
+LE_hot:	di		; We can enter here if basic was already loaded
+	ld a,03		; switch all banks used by basic to page 3 RAM. 
 	out (memmap),a
 	out (memmap+1),a
 	out (memmap+2),a
@@ -228,14 +258,12 @@ LE_hot:	if def ROM_BOTTOM_a000
 	jp $0000
 LE_REND:
 
-
-
 ;***************************************************************************
 ;MEMORY_DUMP_COMMAND
 ;Function: Print $80 databytes from specified location
 ;***************************************************************************
 MDC_1: DEFB "Memory Dump", 0Dh, 0Ah
-MDC_2: DEFB "Location to start in 4 digit HEX: ",EOS
+MDC_2: DEFB "Start HEX: ",EOS
 MDC_3: DEFB "      0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F", 0Dh, 0Ah, EOS
 
 MDCMD:
@@ -299,9 +327,9 @@ CHAR2BUF:
 ;Function: Copy data blocks in memory
 ;***************************************************************************
 MVC_1:	DEFB	"Move Data", 0Dh, 0Ah, EOS
-MVC_S:	DEFB	"Start Location: ", EOS
-MVC_E:	DEFB	"End Location: ", EOS
-MVC_D:	DEFB	"Destination Location: ", EOS
+MVC_S:	DEFB	"Start: ", EOS
+MVC_E:	DEFB	"End: ", EOS
+MVC_D:	DEFB	"Destination: ", EOS
 
 MOVE_COMMAND:	LD		HL, MVC_1	; Print some messages
         CALL	CON_PRT_STR
@@ -383,7 +411,7 @@ GETP:		ld		e, (hl) ; MVADDR
 ;***************************************************************************
 
 MFC_1:	DEFB	"Fill Memory", 0Dh, 0Ah, EOS
-MFC_D:	DEFB	"Data value (one byte): ", EOS
+MFC_D:	DEFB	"Value: ", EOS
 
 FILL_COMMAND:	LD		HL, MFC_1	; Print some messages
         CALL	CON_PRT_STR
@@ -586,7 +614,7 @@ RICOUT:        CALL	CON_PRT_NL
 ; Function: Write byte to port
 ;***************************************************************************
 
-MPW_1:  DEFB    "Write data to port", 0Dh, 0Ah
+MPW_1:  DEFB    "IO write", 0Dh, 0Ah
 MPW_P:  DEFB    "Port & data: ", EOS
 
 PW_COMMAND:	LD      HL, MPW_1
@@ -617,9 +645,9 @@ PW_COMMAND:	LD      HL, MPW_1
 ; Function: Execute a program at memory location
 ;***************************************************************************
 
-MGo_1:	DEFB	"Execute program in memory", 0Dh, 0Ah, EOS
+MGo_1:	DEFB	"Jump to program in mem", 0Dh, 0Ah, EOS
 
-MGo_2:	DEFB	"Memory location: ", EOS
+MGo_2:	DEFB	"Location: ", EOS
 
 GO_COMMAND:	LD		HL, MGo_1	; Print some messages
         CALL	CON_PRT_STR
@@ -663,7 +691,7 @@ CL_COMMAND:	LD		HL, MCl_1	; Print some messages
 
 CCKSM_COMMAND:	CALL	CON_PRT_STR_SP
 zoWarnFlow = false
-	DEFB    "Calculate checksum for memory range", 0Dh, 0Ah, "Start location: ", EOS
+	DEFB    "Checksum for mem range", 0Dh, 0Ah, "Start location: ", EOS
 zoWarnFlow = true
         
 	CALL	CON_GETHEXWORD
@@ -914,13 +942,12 @@ REGDMPJ:
 ; Tssss eeee
 
 TRC_1: DEFB "RAM Test", 0Dh, 0Ah, EOS
-TRC_2: DEFB "Location to start in 4 digit HEX: ", EOS
-TRC_3: DEFB 0Dh, 0Ah, "Location to end in 4 digit HEX: ", EOS
+TRC_3: DEFB 0Dh, 0Ah, "End HEX: ", EOS
 TRC_4: DEFB 0Dh, 0Ah, "Start address should be before End address", EOS
 
 TRAM_COMMAND:	LD      HL,TRC_1        ;Print some messages 
         CALL    CON_PRT_STR
-        LD      HL,TRC_2
+        LD      HL,MDC_2
         CALL    CON_PRT_STR
         
         CALL    CON_GETHEXWORD              ;HL now points to databyte location	
