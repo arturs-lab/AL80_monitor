@@ -108,22 +108,3 @@ UART_RX_CHK:	IN		A,(UART5)			;Fetch the control register
 UART_RX:		CALL  UART_RX_RDY			;Make sure UART is ready to receive
 			IN    A,(UART0)				;Receive character in UART to A
 			RET			
-
-;***************************************************************************
-;uart_test
-;Function: Check if UART is reachable. Make some noise if not
-;***************************************************************************
-uart_test	ld a,$55
-	out (UART7),a
-	in a,(UART7)
-	cp a,$55
-	jr nz,ut1
-	ld a,$aa
-	out (UART7),a
-	in a,(UART7)
-	cp a,$aa
-	jr z,ut2
-ut1:	ld bc,$0400	; bc = duration
-	ld a,$04		; a = pitch
-	call beep
-ut2:	ret
