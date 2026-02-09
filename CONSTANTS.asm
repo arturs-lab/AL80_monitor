@@ -14,13 +14,15 @@ CPU		EQU "Z80"
 ; we could use this to trigger including UART code
 ; but I want flexibility to include it but not use for console.
 ; here we decide whether UAET or SIOA will be used as console
-;USE_UART:	EQU true
+USE_UART:	EQU true
 
 ; console baud rate can be chip-dependant
-ifdef USE_UART
+; we're using 9600 baud to give CPU time to process
+; incoming data when sending Intel Hex file
+if def USE_UART
 CONSOLE_BAUD	equ 9600
 else
-CONSOLE_BAUD	equ 19200
+CONSOLE_BAUD	equ 9600
 endif
 
 ; do we want to enable interrupts?
