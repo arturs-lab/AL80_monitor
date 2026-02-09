@@ -13,7 +13,15 @@ CPU		EQU "Z80"
 
 ; we could use this to trigger including UART code
 ; but I want flexibility to include it but not use for console.
-USE_UART:	EQU true
+; here we decide whether UAET or SIOA will be used as console
+;USE_UART:	EQU true
+
+; console baud rate can be chip-dependant
+ifdef USE_UART
+CONSOLE_BAUD	equ 9600
+else
+CONSOLE_BAUD	equ 19200
+endif
 
 ; do we want to enable interrupts?
 EN_INT:	EQU true
@@ -282,8 +290,8 @@ endif
 
 ; CTC time constants values
 if MACHINE = "AL80"
-CTC_CH0_TV:	EQU (SIOCLK/19200)	; SIOA 19200 baud with no prescaler in CTC and no prescaler in SIO
-CTC_CH1_TV:	EQU (SIOCLK/19200)	; SIOB 19200 baud with no prescaler in CTC and no prescaler in SIO
+CTC_CH0_TV:	EQU (SIOCLK/CONSOLE_BAUD)	; SIOA 19200 baud with no prescaler in CTC and no prescaler in SIO
+CTC_CH1_TV:	EQU (SIOCLK/CONSOLE_BAUD)	; SIOB 19200 baud with no prescaler in CTC and no prescaler in SIO
 CTC_CH2_TV:	EQU (CPUCLK/(1000*256))	; @6.66MHz with 256 prescaler in CTC $1a -> 1000Hz, 1ms
 CTC_CH3_TV:	EQU (CPUCLK/(200*256))	; @6.66MHz with 256 prescaler in CTC $82 -> 200Hz, 5ms
 else
