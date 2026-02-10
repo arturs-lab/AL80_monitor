@@ -260,44 +260,162 @@ RESET_COMMAND:
 ;PRINT_MON_HDR
 ;Function: Print out program header info
 ;***************************************************************************
-MNMSG1:     DEFB    0DH, 0Ah, MACHINE, " Computer", 09h, 09h, 09h, "2025 Artur's Lab"
-MNMSG2:     DEFB    0DH, 0Ah, "Original code 2015 M. Cook",$0d,$0a
-            DEFB    " adaptation to MPF-1 / Z80 DART",09h, "2022 F.J.Kraan", 0Dh, 0Ah
-            DEFB    "Adaptation to ", MACHINE ," 2025 Artur's Lab", 0Dh, 0Ah
-MNMSG3A:    DEFB    "Monitor v", VERSMYR, ".", VERSMIN, ", ROM: ", EOS
-MNMSG3B:    DEFB    "h, RAM: ", EOS
-MNMSG3C:    DEFB    "h, CTC: ", EOS
-MNMSG3D:    DEFB    "h, SIO: ", EOS
-MNMSG3E:    DEFB    "h, PIO: ", EOS
-MNMSG3F:    DEFB    "h", 0Dh, 0AH, 0Dh, 0AH
-MONHLP:     DEFB    09h," Input ? for command list", 0Dh, 0AH, EOS
+PRINT_MON_HDR:
+	CALL    CLEAR_SCREEN        ;Clear the terminal screen
+	call CON_PRT_STR_SP	; print banner
+zoWarnFlow = false
+	DEFB    0DH, 0Ah, MACHINE, " Computer", 09h, 09h, 09h, "2025 Artur's Lab"
+	DEFB    0DH, 0Ah, "Original code 2015 M. Cook",$0d,$0a
+	DEFB    " adaptation to MPF-1 / Z80 DART",09h, "2022 F.J.Kraan", 0Dh, 0Ah
+	DEFB    "Adaptation to ", MACHINE ," 2025 Artur's Lab", 0Dh, 0Ah
+	DEFB    "Monitor v", VERSMYR, ".", VERSMIN, $0D, $0A, "ROM: ", EOS
+zoWarnFlow = true
+	LD      HL, ROM_BOTTOM
+	CALL    CON_PRINTHWORD
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    ", RAM: ", EOS
+zoWarnFlow = true
+	LD      HL, RAM_BOTTOM
+	CALL    CON_PRINTHWORD
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    $0D, $0A, EOS
+zoWarnFlow = true
+
+if IO_CARD
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    "IO AY: ", EOS
+zoWarnFlow = true
+	LD      A, IOAY
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    ", IO YMZ: ", EOS
+zoWarnFlow = true
+	LD      A, IOYMZ
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    ", FRQ SRC: ", EOS
+zoWarnFlow = true
+	LD      A, IOFRQSRC
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    ", FRQ DIV: ", EOS
+zoWarnFlow = true
+	LD      A, IOFRQDIV
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    ", UART: ", EOS
+zoWarnFlow = true
+	LD      A, UART_BASE
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    $0D, $0A, EOS
+zoWarnFlow = true
+endif
+
+if ZILOG_CARD
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    "CTC: ", EOS
+zoWarnFlow = true
+	LD      A, CTC_BASE
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    ", SIO: ", EOS
+zoWarnFlow = true
+	LD      A, SIO_BASE
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    ", PIO: ", EOS
+zoWarnFlow = true
+	LD      A, PIO_BASE
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    ", 8255: ", EOS
+zoWarnFlow = true
+	LD      A, i8255A
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    $0D, $0A, EOS
+zoWarnFlow = true
+endif
+
+if CF_CARD
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    "CF Card: ", EOS
+zoWarnFlow = true
+	LD      A, CFBASE
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    $0D, $0A, EOS
+zoWarnFlow = true
+endif
+
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    "TURBO: ", EOS
+zoWarnFlow = true
+	LD      A, turbo
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    ", BEEPR: ", EOS
+zoWarnFlow = true
+	LD      A, beepr
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    ", CPLD: ", EOS
+zoWarnFlow = true
+	LD      A, cpld
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    ", SN76_D: ", EOS
+zoWarnFlow = true
+	LD      A, SN76_D
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    ", SN76: ", EOS
+zoWarnFlow = true
+	LD      A, SN76
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    ", YMZ: ", EOS
+zoWarnFlow = true
+	LD      A, ymcs
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    ", MEMMAP: ", EOS
+zoWarnFlow = true
+	LD      A, memmap
+	CALL    CON_PRINTHBYTE
+	call CON_PRT_STR_SP
+zoWarnFlow = false
+	DEFB    0Dh, 0AH, 0Dh, 0AH
+	DEFB    09h," Input ? for command list", 0Dh, 0AH, EOS
+zoWarnFlow = true
+
+        RET
+
 MONERR:     DEFB    0Dh, 0AH, "Error in params: ", EOS
 
-PRINT_MON_HDR:
-        CALL    CLEAR_SCREEN        ;Clear the terminal screen
-        LD      HL, MNMSG1          ;Print some messages
-        CALL    CON_PRT_STR
-        LD      HL, ROM_BOTTOM
-        CALL    CON_PRINTHWORD
-        LD      HL, MNMSG3B         ; 2nd part, RAM
-        CALL    CON_PRT_STR
-        LD      HL, RAM_BOTTOM
-        CALL    CON_PRINTHWORD
-        LD      HL, MNMSG3C         ; 3rd part CTC
-        CALL    CON_PRT_STR
-        LD      A, CTC_BASE
-        CALL    CON_PRINTHBYTE
-        LD      HL, MNMSG3D         ; 4th part SIO
-        CALL    CON_PRT_STR
-        LD      A, SIO_BASE
-        CALL    CON_PRINTHBYTE
-        LD      HL, MNMSG3E         ; 5th part PIO
-        CALL    CON_PRT_STR
-        LD      A, PIO_BASE
-        CALL    CON_PRINTHBYTE
-        LD      HL, MNMSG3F         ; 6th part, line ending
-        CALL    CON_PRT_STR
-        RET
 
 ;***************************************************************************
 ;MON_PROMPT
