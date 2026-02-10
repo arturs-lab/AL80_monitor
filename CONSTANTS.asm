@@ -9,6 +9,10 @@ SIOCLK	EQU 1843200
 CPUCLK	EQU 6666666
 CPU		EQU "Z80"
 
+IO_CARD	EQU TRUE
+ZILOG_CARD	EQU TRUE
+CF_CARD	EQU TRUE
+
 ; Constants, extracted to make the versioned file hardware agnostic
 
 ; we could use this to trigger including UART code
@@ -60,7 +64,7 @@ ROM_BOTTOM:	EQU $a000       ; Bottom address of ROM
 ROM_TOP:	EQU ROM_BOTTOM + 01FFFh		; Top address of ROM
 
 JUMPTAB:	EQU $c000 - $300	; jump table for monitor routines
-IRQTAB:	EQU $c000 - $400	; interrupt vector table
+IRQTAB:	EQU $c000 - $380	; interrupt vector table
 SP_INIT:	EQU $c000			; initial value of SP
 CFSECT_BUF_V:	EQU $C000		; value for CFSECT_BUF variable. Defaults to $c000 in preparation for CPM loader
 MONVARS:	EQU $c000 - $200	; SP goes at the top of memory. Put monitor vars and buffers 511 bytes below it
@@ -86,9 +90,9 @@ USERRREG:	equ RAM_BOTTOM + $0180
 
 
 ; these interrupt bases are added to Z80 interrupt vector register I to form final vector in IM2
-SIOV:		EQU $0		; SIO interrupt vector base except bits 2-0 are set according to interrupt type, 16 interrupts
-CTCV:		EQU $10		; CTC interrupt vector base, 4 interrupts
-PIOV:		EQU $18		; PIO interrupt vector base, 2 interrupts
+SIOV:		EQU low (IRQTAB) + $0		; SIO interrupt vector base except bits 2-0 are set according to interrupt type, 16 interrupts
+CTCV:		EQU low (IRQTAB) + $10		; CTC interrupt vector base, 4 interrupts
+PIOV:		EQU low (IRQTAB) + $18		; PIO interrupt vector base, 2 interrupts
 
 ;MPFMON:	EQU 0000h
 UPLOADBUF:	EQU MONVARS + 0h     ; Buffer for hex-intel upload. Allows up to 128 bytes (80h) per line.
@@ -219,12 +223,12 @@ CFCTL:	EQU CFBASE + 08h + 06h	; write: Device control
 CFALTSTAT:	EQU CFBASE + 08h + 06h	; read: Alternate status
 CFADDR:	EQU CFBASE + 08h + 07h	; read: Drive address
 
-turbo:	EQU $f0	; clock divider 0=4MHz, 1=2MHz, 2=1.33MHz, 3=1MHz
+turbo:	EQU $f0	; clock divider (OSC/(turbo+1)/2) 0=20MHz, 1=10MHz, 2=6.666MHz, 3=5MHz, 4=4MHz, 5=3.333MHz
 beepr:	EQU $f1	; speaker beeper
-cpld:	equ 	$f2
-cpld2:	equ 	$f3
-sp_r:	equ 	$f4
-ymcs:	equ 	$f6	; f6 address reg f7 data reg
+cpld:		equ 	$f2	; gpio pins, 8 in 8 out
+SN76_D:	equ 	$f3	; data bus for SN76 and other peripherials if needed
+SN76:		equ 	$f4	; SN76 CS control on bit 0
+ymcs:		equ 	$f6	; f6 address reg f7 data reg
 memmap:	EQU $f8	; memory map $d8-$df
 
 ; ### other
