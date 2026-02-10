@@ -87,6 +87,7 @@ cp_lp5:	LD (MVADDR+4), HL
 ;zoWarnFlow = false
 ;	db $0d,$0a,"      0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F", 0Dh, 0Ah, EOS
 ;zoWarnFlow = true
+	CALL    CON_PRT_NL
 	LD 		HL, MDC_3	
 	CALL    CON_PRT_STR
 
@@ -175,7 +176,7 @@ LE_A:	in a,(memmap+3)
 	out (memmap+3),a
 	ld hl,$6000	; eeprom $200-$3fff is mirrored here
 	ld de,$a000
-	ld bc,$1c00
+	ld bc,$1c80
 	ldir
 	pop af
 	out (memmap+3),a
@@ -276,7 +277,7 @@ MDCMD:
 			RET		NZ
 			LD		(DMPADDR), HL		;Keep address for next/prev.
 			PUSH	HL					;Save HL that holds databyte location on stack
-			CALL    CON_PRT_NL		;Print some messages
+;			CALL    CON_PRT_NL		;Print some messages
 			CALL    CON_PRT_NL
 			LD 		HL, MDC_3	
 			CALL    CON_PRT_STR
