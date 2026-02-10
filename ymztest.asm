@@ -32,12 +32,12 @@ IOPORT	EQU	IOFRQDIV
 elif CHIP = "YMZ"
 AYSEL		EQU	ymcs
 AYDTA		EQU	ymcs+1
-PLAYER	EQU	$2400
+PLAYER	EQU	$4000
 FRQDIV	EQU	$a0
 IOPORT	EQU	turbo
 endif
 
-MUSIC1	EQU	PLAYER + $0500 - $00c0
+MUSIC1	EQU	codeend
 MUSIC2	EQU	MUSIC1 + MUSICSZ
 MUSIC3	EQU	MUSIC2 + MUSICSZ
 XTRA		EQU	MUSIC3 + MUSICSZ
@@ -47,17 +47,17 @@ XTRAEND	EQU	XTRA + 385	; $181 bytes = 385 - actual length of this song
 
 START:
 FA00:
-if CHIP = "YMZ"		; onboard YMZ
-	in a,(IOPORT)
-	and a,$0f
-	or a,FRQDIV	; freq divider
-	out (IOPORT),a
-else				; sound chip on IIO board
-	ld a,$10	; frequency source
-	out (04),a
-	ld a,FRQDIV	; freq divider
-	out (IOPORT),a
-endif
+;if CHIP = "YMZ"		; onboard YMZ
+;	in a,(IOPORT)
+;	and a,$0f
+;	or a,FRQDIV	; freq divider
+;	out (IOPORT),a
+;else				; sound chip on IIO board
+;	ld a,$10	; frequency source
+;	out (04),a
+;	ld a,FRQDIV	; freq divider
+;	out (IOPORT),a
+;endif
 
 if CPUCLKD = 0
 	ld a,$c0		; playback speed
@@ -66,14 +66,14 @@ else
 endif
 	ld (PBSPEED),a
 	ld a,(ctrl)
-	ld ays+1,a
+	ld (ays+1),a
 	ld a,(dta)
-	ld ayd+1,a
+	ld (ayd+1),a
 	call jCON_PRT_NL
 	jp	FBA5		; initialize note pointers and start playing
 
-ctrl	db $b0
-dta	db $b1
+ctrl	db AYSEL
+dta	db AYDTA
 
 ; updated by $FBF4, $FCAB
 ; 
@@ -658,6 +658,8 @@ rtrn	ld e,$ff
 	add $ff
 	ld e,a
 	ret
+
+codeend	equ $+1
 
 	ORG	MUSIC1
 
